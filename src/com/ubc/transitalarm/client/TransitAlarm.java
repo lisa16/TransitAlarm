@@ -3,12 +3,16 @@ package com.ubc.transitalarm.client;
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.geolocation.client.Geolocation;
 import com.google.gwt.geolocation.client.Geolocation.PositionOptions;
 import com.google.gwt.geolocation.client.Position;
 import com.google.gwt.geolocation.client.Position.Coordinates;
 import com.google.gwt.geolocation.client.PositionError;
+import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.Button;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -32,7 +36,8 @@ public class TransitAlarm implements EntryPoint {
 	private double latitude;
 	private double longitude;
 	private int queryInterval = 10000; 
-    
+	private int refreshInterval = 10000;
+
 	/**
 	 * This is the entry point method.
 	 */
@@ -41,8 +46,10 @@ public class TransitAlarm implements EntryPoint {
 		if (geoposition == null) {
 			Window.alert("Sorry, your browser doesn't support the Geolocation feature!");
 		}
+
 		Geolocation.PositionOptions options = new PositionOptions();
 		options.setMaximumAge(queryInterval);
+
 		geoposition.getCurrentPosition(new Callback<Position, PositionError>() {
 			@Override
 			public void onSuccess(Position result) {
@@ -55,6 +62,24 @@ public class TransitAlarm implements EntryPoint {
 			public void onFailure(PositionError reason) {
 				Window.alert("Sorry, your location cannot be determined!");
 			}
-		});
+		});	
+
+		Timer refreshTimer = new Timer() {
+			public void run() {
+				Window.Location.reload();
+			}
+		};
+		refreshTimer.scheduleRepeating(refreshInterval); // Auto refresh every 10 secs
+		
+		Button refreshButton = new Button ("Refresh");
+		refreshButton.getElement().setClassName("btn btn-info");
+		refreshButton.addClickHandler(new refreshClickHandler());
+	}
+	
+	class refreshClickHandler implements ClickHandler{
+		@Override
+		public void onClick(ClickEvent event) {
+			Window.Location.reload();				
+		}			
 	}
 }
