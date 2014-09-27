@@ -5,7 +5,7 @@
 *.war
 
 # gwt caches and compiled units #
-war/nextbus/
+war/transitalarm/
 gwt-unitCache/
 test-classes/
 www-test/
