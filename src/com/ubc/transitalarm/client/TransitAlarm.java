@@ -1,7 +1,14 @@
 package com.ubc.transitalarm.client;
 
+import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.geolocation.client.Geolocation;
+import com.google.gwt.geolocation.client.Geolocation.PositionOptions;
+import com.google.gwt.geolocation.client.Position;
+import com.google.gwt.geolocation.client.Position.Coordinates;
+import com.google.gwt.geolocation.client.PositionError;
+import com.google.gwt.user.client.Window;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -16,16 +23,38 @@ public class TransitAlarm implements EntryPoint {
 			+ "connection and try again.";
 
 	/**
-	 * Create a remote service proxy to talk to the server-side Greeting service.
+	 * Create a remote service proxy to talk to the server-side Greeting
+	 * service.
 	 */
-	private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
+	private final GreetingServiceAsync greetingService = GWT
+			.create(GreetingService.class);
 
+	private double latitude;
+	private double longitude;
+	private int queryInterval = 10000; 
+    
 	/**
 	 * This is the entry point method.
 	 */
 	public void onModuleLoad() {
+		Geolocation geoposition = Geolocation.getIfSupported();
+		if (geoposition == null) {
+			Window.alert("Sorry, your browser doesn't support the Geolocation feature!");
+		}
+		Geolocation.PositionOptions options = new PositionOptions();
+		options.setMaximumAge(queryInterval);
+		geoposition.getCurrentPosition(new Callback<Position, PositionError>() {
+			@Override
+			public void onSuccess(Position result) {
+				Coordinates coordinates = result.getCoordinates();
+				latitude = coordinates.getLatitude();
+				longitude = coordinates.getLongitude();
+			}
 
-
-
+			@Override
+			public void onFailure(PositionError reason) {
+				Window.alert("Sorry, your location cannot be determined!");
+			}
+		});
 	}
 }
