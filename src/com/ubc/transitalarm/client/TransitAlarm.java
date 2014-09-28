@@ -1,9 +1,17 @@
 package com.ubc.transitalarm.client;
 
+import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.geolocation.client.Geolocation;
+import com.google.gwt.geolocation.client.Geolocation.PositionOptions;
+import com.google.gwt.geolocation.client.Position;
+import com.google.gwt.geolocation.client.Position.Coordinates;
+import com.google.gwt.geolocation.client.PositionError;
+import com.google.gwt.user.client.Timer;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.RootPanel;
@@ -21,18 +29,26 @@ public class TransitAlarm implements EntryPoint {
 			+ "connection and try again.";
 
 	/**
-	 * Create a remote service proxy to talk to the server-side Greeting service.
+	 * Create a remote service proxy to talk to the server-side Greeting
+	 * service.
 	 */
-	private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
+	private final GreetingServiceAsync greetingService = GWT
+			.create(GreetingService.class);
 
 	final HTML alarmPageHTML = new HTML();
 	final HTML destinationPageHTML = new HTML();
 	
+	private int queryInterval = 10000; 
+	private int refreshInterval = 10000;
+	Geolocation geoposition; 
+	Geolocation.PositionOptions options;
 	/**
 	 * This is the entry point method.
 	 */
 	public void onModuleLoad() 
 	{
+		refreshPosition();
+
 		destinationPageHTML.setHTML("		<div class=\"row\">\r\n" + 
 				"			<h3>Source:</h3>\r\n" + 
 				"			<input class=\"form-control\" placeHolder=\"Enter Starting Location\"\r\n" + 
@@ -75,6 +91,18 @@ public class TransitAlarm implements EntryPoint {
 		
 		loadDestinationPage();
 //		loadAlarmPage();
+
+		Timer refreshTimer = new Timer() {
+			public void run() {
+				refreshPosition();
+			}
+		};
+		refreshTimer.scheduleRepeating(refreshInterval); // Auto refresh every 10 secs
+
+		Button refreshButton = new Button ("Refresh");
+		refreshButton.getElement().setClassName("btn btn-info");
+		refreshButton.addClickHandler(new refreshClickHandler());
+		RootPanel.get().add(refreshButton);
 		
 	}
 	
@@ -94,7 +122,7 @@ public class TransitAlarm implements EntryPoint {
 		RootPanel.get("alarmPageField").add(alarmPageHTML);
 	}
 	
-	class SearchButtonClickHandler implements ClickHandler {
+class SearchButtonClickHandler implements ClickHandler {
 
 		public void onClick(ClickEvent event) 
 		{
@@ -103,5 +131,40 @@ public class TransitAlarm implements EntryPoint {
 			
 			loadAlarmPage();
 		}
+	}
+
+
+	private void refreshPosition() {
+		geoposition = Geolocation.getIfSupported();
+		if (geoposition == null) {
+			Window.alert("Sorry, your browser doesn't support the Geolocation feature!");
+		}
+
+		options = new PositionOptions();
+		options.setMaximumAge(queryInterval);
+
+		geoposition.getCurrentPosition(new Callback<Position, PositionError>() {
+			@Override
+			public void onSuccess(Position result) {
+				Coordinates coordinates = result.getCoordinates();
+				latitude = coordinates.getLatitude();
+				longitude = coordinates.getLongitude();
+				System.out.println(latitude);
+				System.out.println(longitude);
+			}
+
+			@Override
+			public void onFailure(PositionError reason) {
+				Window.alert("Sorry, your location cannot be determined!");
+			}
+		}, options);
+
+	}
+
+	class refreshClickHandler implements ClickHandler{
+		@Override
+		public void onClick(ClickEvent event) {
+			refreshPosition();
+		}			
 	}
 }
