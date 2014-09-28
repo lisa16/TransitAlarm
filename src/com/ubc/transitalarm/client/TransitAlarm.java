@@ -54,7 +54,7 @@ public class TransitAlarm implements EntryPoint {
 
 	private double latitude;
 	private double longitude;
-	
+
 
 	long currentTime = System.currentTimeMillis();
 	long endTime = currentTime + refreshInterval;
@@ -151,13 +151,13 @@ public class TransitAlarm implements EntryPoint {
 	private TextBox startingInput;
 	private CheckBox currentLocationCheckBox;
 	private TextBox destinationInput;
-	
+
 
 	public void loadDestinationPage()
 	{
-		refreshButton = new Button ("Refresh Now");
-		refreshButton.getElement().setClassName("btn btn-info");
-		refreshButton.addClickHandler(new refreshClickHandler());
+		//		refreshButton = new Button ("Refresh Now");
+		//		refreshButton.getElement().setClassName("btn btn-info");
+		//		refreshButton.addClickHandler(new refreshClickHandler());
 		Button searchButton = new Button("Search");
 		searchButton.getElement().setClassName("btn btn-lg btn-primary");
 		searchButton.addClickHandler(new SearchButtonClickHandler());
@@ -185,7 +185,7 @@ public class TransitAlarm implements EntryPoint {
 		searchDestinationFIeld.add(destinationLabel);
 		searchDestinationFIeld.add(destinationInput);
 		RootPanel.get("searchDestinationField").add(searchButton);
-		RootPanel.get("searchDestinationField").add(refreshButton);
+		//RootPanel.get("searchDestinationField").add(refreshButton);
 	}
 
 	public void loadAlarmPage()
@@ -195,8 +195,10 @@ public class TransitAlarm implements EntryPoint {
 		RootPanel.get("alarmPageField").add(stopAlarm);
 		
 		RootPanel.get("alarmPageField").add(alarmPageHTML);
-		
-		
+		refreshButton = new Button ("Refresh Now");
+		refreshButton.getElement().setClassName("btn btn-info");
+		refreshButton.addClickHandler(new refreshClickHandler());
+		RootPanel.get().add(refreshButton);
 	}
 
 	class SearchButtonClickHandler implements ClickHandler {
@@ -205,9 +207,9 @@ public class TransitAlarm implements EntryPoint {
 		{
 			String start=startingInput.getText();
 			String end=destinationInput.getText();
-			
+
 			callGoogleDirectionAPI(start,end);
-			
+
 			RootPanel.get("searchDestinationField").clear();
 
 			loadAlarmPage();
