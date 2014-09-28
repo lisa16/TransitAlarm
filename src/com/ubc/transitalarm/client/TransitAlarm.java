@@ -13,8 +13,10 @@ import com.google.gwt.geolocation.client.PositionError;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.TextBox;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -127,7 +129,28 @@ public class TransitAlarm implements EntryPoint {
 		searchButton.getElement().setClassName("btn btn-lg btn-primary");
 		searchButton.addClickHandler(new SearchButtonClickHandler());
 
-
+//		RootPanel.get("searchDestinationField").add(destinationPageHTML);
+		final RootPanel searchDestinationFIeld = RootPanel.get("searchDestinationField");
+		
+		HTML sourceLabel = new HTML("<h3>Starting: </h3>");
+		TextBox startingInput = new TextBox();
+		startingInput.getElement().setClassName("form-control");
+		startingInput.getElement().setAttribute("placeHolder", "Enter Starting Location");
+		startingInput.getElement().setAttribute("type", "text");
+		
+		CheckBox currentLocationCheckBox = new CheckBox("Curent Location");
+		
+		HTML destinationLabel = new HTML("<h3>Destination: </h3>");
+		TextBox destinationInput = new TextBox();
+		destinationInput.getElement().setClassName("form-control");
+		destinationInput.getElement().setAttribute("placeHolder", "Enter Destination Location");
+		destinationInput.getElement().setAttribute("type", "text");
+		
+		searchDestinationFIeld.add(sourceLabel);
+		searchDestinationFIeld.add(startingInput);
+		searchDestinationFIeld.add(currentLocationCheckBox);
+		searchDestinationFIeld.add(destinationLabel);
+		searchDestinationFIeld.add(destinationInput);
 		RootPanel.get("searchDestinationField").add(destinationPageHTML);
 		RootPanel.get("searchDestinationField").add(searchButton);
 		RootPanel.get("searchDestinationField").add(refreshButton);
