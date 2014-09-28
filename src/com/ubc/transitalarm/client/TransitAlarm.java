@@ -140,15 +140,15 @@ public class TransitAlarm implements EntryPoint {
 		final RootPanel searchDestinationFIeld = RootPanel.get("searchDestinationField");
 		
 		HTML sourceLabel = new HTML("<h3>Starting: </h3>");
-		TextBox startingInput = new TextBox();
+		startingInput = new TextBox();
 		startingInput.getElement().setClassName("form-control");
 		startingInput.getElement().setAttribute("placeHolder", "Enter Starting Location");
 		startingInput.getElement().setAttribute("type", "text");
 		
-		CheckBox currentLocationCheckBox = new CheckBox("Curent Location");
+		currentLocationCheckBox = new CheckBox("Curent Location");
 		
 		HTML destinationLabel = new HTML("<h3>Destination: </h3>");
-		TextBox destinationInput = new TextBox();
+		destinationInput = new TextBox();
 		destinationInput.getElement().setClassName("form-control");
 		destinationInput.getElement().setAttribute("placeHolder", "Enter Destination Location");
 		destinationInput.getElement().setAttribute("type", "text");
@@ -172,7 +172,11 @@ public class TransitAlarm implements EntryPoint {
 
 		public void onClick(ClickEvent event) 
 		{
-
+			String start=startingInput.getText();
+			String end=destinationInput.getText();
+			
+			callGoogleDirectionAPI(start,end);
+			
 			RootPanel.get("searchDestinationField").clear();
 
 			loadAlarmPage();
@@ -245,7 +249,7 @@ public class TransitAlarm implements EntryPoint {
 		return (rad * 180.0 / Math.PI);
 	}
 
-	public void callGoogleDirectionAPI()
+	public void callGoogleDirectionAPI(String origin, String destination)
 	{
 		alarmService = new AsyncCallback<String>(){
 			@Override
@@ -259,12 +263,11 @@ public class TransitAlarm implements EntryPoint {
 				System.out.println(result);
 			}
 		};
-		String dddd= "dd";
-		String cccc= "cc";
+
 		String queryUri = "maps.googleapis.com/maps/api/directions/json?origin="+
-				dddd +
+				origin +
 				"&destination="+
-				cccc+
+				destination+
 				"&key=AIzaSyDdbIImonbUzFmDPgfy37d0zBEsrXEo3FI&departure_time=1343641500&mode=transit";
 
 		greetingService.greetServer(queryUri, alarmService);
