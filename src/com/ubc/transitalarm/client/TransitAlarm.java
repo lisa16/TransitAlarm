@@ -45,6 +45,9 @@ public class TransitAlarm implements EntryPoint {
 
 	private double latitude;
 	private double longitude;
+	
+	long currentTime = System.currentTimeMillis();
+	long endTime = currentTime + refreshInterval;
 
 
 	/**
@@ -103,7 +106,15 @@ public class TransitAlarm implements EntryPoint {
 			}
 		};
 		refreshTimer.scheduleRepeating(refreshInterval); // Auto refresh every 10 secs
-
+				
+		Timer countdown = new Timer() {
+			@Override
+			public void run() {
+				System.out.println("Refreshing in: " + (endTime - currentTime)/1000 + "seconds");
+				
+			}			
+		};
+		countdown.scheduleRepeating(1000);
 
 	}
 
