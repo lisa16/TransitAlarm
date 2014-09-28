@@ -135,6 +135,15 @@ public class TransitAlarm implements EntryPoint {
 				}
 				if(refreshButton!=null){
 					refreshButton.setText("Refreshing in: " + (endTime - currentTime)/1000 + " seconds");
+					
+//					fakeLatitude += 0.0005d;
+//					fakeLongitude += 0.0005d;
+					
+					if(_destinationLocations != null)
+					{
+						changeDestinations(_destinationLocations);
+					}
+					
 				}
 				System.out.println("Refreshing in: " + (endTime - currentTime)/1000 + " seconds");
 
@@ -217,6 +226,8 @@ public class TransitAlarm implements EntryPoint {
 	}
 
 
+	boolean refresh = true;
+	
 	private void refreshPosition() {
 		geoposition = Geolocation.getIfSupported();
 		if (geoposition == null) {
@@ -232,6 +243,15 @@ public class TransitAlarm implements EntryPoint {
 				Coordinates coordinates = result.getCoordinates();
 				latitude = coordinates.getLatitude();
 				longitude = coordinates.getLongitude();
+				
+				System.out.println(latitude + " : " + longitude);
+				if(refresh)
+				{
+					fakeLatitude = latitude;
+					fakeLongitude = longitude;
+					refresh = false;
+				}
+				
 				System.out.println(latitude);
 				System.out.println(longitude);
 			}
@@ -281,7 +301,32 @@ public class TransitAlarm implements EntryPoint {
 	private double rad2deg(double rad) {
 		return (rad * 180.0 / Math.PI);
 	}
+	
+	double fakeLatitude;
+	double fakeLongitude;
 
+	private void changeDestinations(DestinationLocations result)
+	{
+		_destinationLocations = result;
+		
+		String content = "";
+		
+		List<String> names = _destinationLocations.getNames();
+		List<Double> latitudes = _destinationLocations.getLatitudes();
+		List<Double> longitudes = _destinationLocations.getLongitudes();
+		
+		for(int i=0; i<_destinationLocations.getNames().size(); i++)
+		{
+			content += "<h3>" + names.get(i) + "</h3>";
+			
+			double distance = FieldVerifier.distance(latitudes.get(i), longitudes.get(i), latitude, longitude, 'K');
+			content += "<h4> Distance remaining" + distance + " km</h4>";
+		}
+		
+		alarmPageHTML.setHTML(content);
+	}
+	private DestinationLocations _destinationLocations;
+	
 	public void callGoogleDirectionAPI(String origin, String destination)
 	{
 		alarmService = new AsyncCallback<DestinationLocations>(){
@@ -292,23 +337,22 @@ public class TransitAlarm implements EntryPoint {
 
 			@Override
 			public void onSuccess(DestinationLocations result) {
-
-				String transferName = "";
-				String distanceRemaining = "";
+				changeDestinations(result);
+/*				_destinationLocations = result;
 				
 				String content = "";
 				
-				List<String> names = result.getNames();
-				List<Double> latitudes = result.getLatitudes();
-				List<Double> longitudes = result.getLongitudes();
+				List<String> names = _destinationLocations.getNames();
+				List<Double> latitudes = _destinationLocations.getLatitudes();
+				List<Double> longitudes = _destinationLocations.getLongitudes();
 				
-				for(int i=0; i<result.getNames().size(); i++)
+				for(int i=0; i<_destinationLocations.getNames().size(); i++)
 				{
 					content += "<h3>" + names.get(i) + "</h3>";
 					
-					double distance = FieldVerifier.distance(latitudes.get(i), longitudes.get(i), latitude, longitude, 'K');
+					double distance = FieldVerifier.distance(latitudes.get(i), longitudes.get(i), fakeLatitude, fakeLongitude, 'K');
 					content += "<h4> Distance remaining" + distance + " km</h4>";
-				}
+				}*/
 				
 				/*alarmPageHTML.setHTML("		<div class=\"row\">\r\n" + 
 						"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Stop Alarm</button>\r\n" + 
@@ -334,7 +378,7 @@ public class TransitAlarm implements EntryPoint {
 						"			<h4>refreshing in 40 seconds...</h4>\r\n" + 
 						"		</div>");*/
 				
-				alarmPageHTML.setHTML(content);
+				
 			}
 		};
 
