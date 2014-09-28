@@ -2,6 +2,7 @@ package com.ubc.transitalarm.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -20,12 +21,39 @@ public class TransitAlarm implements EntryPoint {
 	 */
 	private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
 
+	public AsyncCallback<String> alarmService;
+	
 	/**
 	 * This is the entry point method.
 	 */
 	public void onModuleLoad() {
 
+		
+		callGoogleDirectionAPI();
+	}
+	
+	public void callGoogleDirectionAPI()
+	{
+		alarmService = new AsyncCallback<String>(){
+			@Override
+			public void onFailure(Throwable caught) {
+				System.out.println(caught.getMessage());
+			}
 
-
+			@Override
+			public void onSuccess(String result) {
+				
+				System.out.println(result);
+			}
+		};
+		String dddd= "dd";
+		String cccc= "cc";
+		String queryUri = "maps.googleapis.com/maps/api/directions/json?origin="+
+				dddd +
+				"&destination="+
+				cccc+
+				"&key=AIzaSyDdbIImonbUzFmDPgfy37d0zBEsrXEo3FI&departure_time=1343641500&mode=transit";
+		
+		greetingService.greetServer(queryUri, alarmService);
 	}
 }
