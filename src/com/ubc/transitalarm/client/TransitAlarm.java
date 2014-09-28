@@ -140,7 +140,6 @@ public class TransitAlarm implements EntryPoint {
 		searchDestinationFIeld.add(currentLocationCheckBox);
 		searchDestinationFIeld.add(destinationLabel);
 		searchDestinationFIeld.add(destinationInput);
-		RootPanel.get("searchDestinationField").add(destinationPageHTML);
 		RootPanel.get("searchDestinationField").add(searchButton);
 		RootPanel.get("searchDestinationField").add(refreshButton);
 	}
