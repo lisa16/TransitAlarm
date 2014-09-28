@@ -47,7 +47,7 @@ public class TransitAlarm implements EntryPoint {
 
 	private double latitude;
 	private double longitude;
-	
+
 	long currentTime = System.currentTimeMillis();
 	long endTime = currentTime + refreshInterval;
 
@@ -108,44 +108,54 @@ public class TransitAlarm implements EntryPoint {
 			}
 		};
 		refreshTimer.scheduleRepeating(refreshInterval); // Auto refresh every 10 secs
-				
+
 		Timer countdown = new Timer() {
 			@Override
 			public void run() {
-				System.out.println("Refreshing in: " + (endTime - currentTime)/1000 + "seconds");
-				
+				currentTime = System.currentTimeMillis();
+				if (endTime - currentTime <= 0){
+					refreshPosition();
+					endTime = currentTime + 10000;
+
+				}
+				if(refreshButton!=null){
+					refreshButton.setText("Refreshing in: " + (endTime - currentTime)/1000 + " seconds");
+				}
+				System.out.println("Refreshing in: " + (endTime - currentTime)/1000 + " seconds");
+
+
 			}			
 		};
 		countdown.scheduleRepeating(1000);
 
 	}
-
+	Button refreshButton;
 	public void loadDestinationPage()
 	{
-		Button refreshButton = new Button ("Refresh Now");
+		refreshButton = new Button ("Refresh Now");
 		refreshButton.getElement().setClassName("btn btn-info");
 		refreshButton.addClickHandler(new refreshClickHandler());
 		Button searchButton = new Button("Search");
 		searchButton.getElement().setClassName("btn btn-lg btn-primary");
 		searchButton.addClickHandler(new SearchButtonClickHandler());
 
-//		RootPanel.get("searchDestinationField").add(destinationPageHTML);
+		//		RootPanel.get("searchDestinationField").add(destinationPageHTML);
 		final RootPanel searchDestinationFIeld = RootPanel.get("searchDestinationField");
-		
+
 		HTML sourceLabel = new HTML("<h3>Starting: </h3>");
 		TextBox startingInput = new TextBox();
 		startingInput.getElement().setClassName("form-control");
 		startingInput.getElement().setAttribute("placeHolder", "Enter Starting Location");
 		startingInput.getElement().setAttribute("type", "text");
-		
+
 		CheckBox currentLocationCheckBox = new CheckBox("Curent Location");
-		
+
 		HTML destinationLabel = new HTML("<h3>Destination: </h3>");
 		TextBox destinationInput = new TextBox();
 		destinationInput.getElement().setClassName("form-control");
 		destinationInput.getElement().setAttribute("placeHolder", "Enter Destination Location");
 		destinationInput.getElement().setAttribute("type", "text");
-		
+
 		searchDestinationFIeld.add(sourceLabel);
 		searchDestinationFIeld.add(startingInput);
 		searchDestinationFIeld.add(currentLocationCheckBox);
