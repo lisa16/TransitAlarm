@@ -132,15 +132,15 @@ public class TransitAlarm implements EntryPoint {
 		countdown.scheduleRepeating(1000);
 
 	}
-<<<<<<< HEAD
+
 	Button refreshButton;
-=======
+
 
 	private TextBox startingInput;
 	private CheckBox currentLocationCheckBox;
 	private TextBox destinationInput;
 	
->>>>>>> a00383a01adf311387f80638ae1f85f323f14bfc
+
 	public void loadDestinationPage()
 	{
 		refreshButton = new Button ("Refresh Now");
