@@ -120,6 +120,10 @@ public class TransitAlarm implements EntryPoint {
 
 	}
 
+	private TextBox startingInput;
+	private CheckBox currentLocationCheckBox;
+	private TextBox destinationInput;
+	
 	public void loadDestinationPage()
 	{
 		Button refreshButton = new Button ("Refresh Now");
