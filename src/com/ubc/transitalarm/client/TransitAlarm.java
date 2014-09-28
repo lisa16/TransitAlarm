@@ -42,6 +42,11 @@ public class TransitAlarm implements EntryPoint {
 	private int refreshInterval = 10000;
 	Geolocation geoposition; 
 	Geolocation.PositionOptions options;
+	
+	private double latitude;
+	private double longitude;
+	
+	
 	/**
 	 * This is the entry point method.
 	 */
