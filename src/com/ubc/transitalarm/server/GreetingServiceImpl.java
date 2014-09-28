@@ -1,34 +1,63 @@
 package com.ubc.transitalarm.server;
 
-import com.ubc.transitalarm.client.GreetingService;
-import com.ubc.transitalarm.shared.FieldVerifier;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import com.google.appengine.labs.repackaged.org.json.JSONArray;
+import com.google.appengine.labs.repackaged.org.json.JSONException;
+import com.google.appengine.labs.repackaged.org.json.JSONObject;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
+import com.ubc.transitalarm.client.GreetingService;
 
 /**
  * The server-side implementation of the RPC service.
  */
 @SuppressWarnings("serial")
 public class GreetingServiceImpl extends RemoteServiceServlet implements
-		GreetingService {
+GreetingService {
 
 	public String greetServer(String input) throws IllegalArgumentException {
 		// Verify that the input is valid. 
-		if (!FieldVerifier.isValidName(input)) {
-			// If the input is not valid, throw an IllegalArgumentException back to
-			// the client.
-			throw new IllegalArgumentException(
-					"Name must be at least 4 characters long");
-		}
 
-		String serverInfo = getServletContext().getServerInfo();
-		String userAgent = getThreadLocalRequest().getHeader("User-Agent");
+		StringBuilder uriBuilder= new StringBuilder(input);
+		String result = makeJSONQuery(uriBuilder);
+
+		try{
+			JSONObject arr= new JSONObject(result);
+			JSONArray routesArray = arr.getJSONArray("routes");
+			JSONObject firstObject = routesArray.getJSONObject(0);
+			JSONArray legsArray = firstObject.getJSONArray("legs");
+			JSONObject transition=legsArray.getJSONObject(0);
+			JSONArray secondObject = transition.getJSONArray("steps");
+			for(int i1=0; i1<secondObject.length(); i1++){
+				JSONObject stepsObject = secondObject.getJSONObject(i1);
+				String travelMode = stepsObject.getString("travel_mode");
+				if(travelMode.equals("TRANSIT"))
+				{
+					JSONObject transitDetail=stepsObject.getJSONObject("transit_details");
+					JSONObject stopArrival=transitDetail.getJSONObject("arrival_stop");
+					String stopName=stopArrival.getString("name");
+					JSONObject stopLocation=stopArrival.getJSONObject("location");
+					double locationLatitude=stopLocation.getDouble("lat");
+					double locationLongtitude=stopLocation.getDouble("lng");
+					System.out.println(locationLatitude);
+					System.out.println(locationLongtitude);
+					System.out.println(stopName);
+				}
+			}
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace();
+		}
+		return result;
 
 		// Escape data from the client to avoid cross-site script vulnerabilities.
-		input = escapeHtml(input);
-		userAgent = escapeHtml(userAgent);
-
-		return "Hello, " + input + "!<br><br>I am running " + serverInfo
-				+ ".<br><br>It looks like you are using:<br>" + userAgent;
+		//		input = escapeHtml(input);
+		//		userAgent = escapeHtml(userAgent);
 	}
 
 	/**
@@ -45,4 +74,38 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 		return html.replaceAll("&", "&amp;").replaceAll("<", "&lt;")
 				.replaceAll(">", "&gt;");
 	}
+	private String makeJSONQuery(StringBuilder urlBuilder) {
+		HttpURLConnection client = null;
+		try {
+			URL url = new URL("https://" + urlBuilder.toString());
+			client = (HttpURLConnection) url.openConnection();
+			client.setRequestProperty("accept", "application/json");
+			client.setConnectTimeout(30000);
+			client.setReadTimeout(30000);
+			client.connect();
+			BufferedReader br;
+			InputStream err = client.getErrorStream();
+			if( err != null )
+				br = new BufferedReader(new InputStreamReader(err));
+			else {
+				InputStream in = client.getInputStream();
+				br = new BufferedReader(new InputStreamReader(in));
+			}
+			String returnString = "";
+			String line;
+			while((line=br.readLine())!=null)
+			{
+				returnString += line;
+			}
+			return returnString;
+		}
+		catch (Exception e) {
+			System.out.println(e.getMessage());
+			return "ERROR";
+		} finally {
+			if(client != null)
+				client.disconnect();
+		}
+	}
 }
+

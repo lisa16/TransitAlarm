@@ -39,16 +39,16 @@ public class TransitAlarm implements EntryPoint {
 
 	final HTML alarmPageHTML = new HTML();
 	final HTML destinationPageHTML = new HTML();
-	
+
 	private int queryInterval = 10000; 
 	private int refreshInterval = 10000;
 	Geolocation geoposition; 
 	Geolocation.PositionOptions options;
-	
+
 	private double latitude;
 	private double longitude;
-	
-	
+
+
 	/**
 	 * This is the entry point method.
 	 */
@@ -70,7 +70,7 @@ public class TransitAlarm implements EntryPoint {
 				"		</div>\r\n" + 
 				"\r\n" + 
 				"		<button type=\"button\" class=\"btn btn-lg btn-primary\">Search</button>");
-		
+
 		alarmPageHTML.setHTML("		<div class=\"row\">\r\n" + 
 				"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Stop Alarm</button>\r\n" + 
 				"		</div>\r\n" + 
@@ -94,10 +94,10 @@ public class TransitAlarm implements EntryPoint {
 				"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Refresh Now</button>\r\n" + 
 				"			<h4>refreshing in 40 seconds...</h4>\r\n" + 
 				"		</div>");
-		
-		
+
+
 		loadDestinationPage();
-//		loadAlarmPage();
+		//		loadAlarmPage();
 
 		Timer refreshTimer = new Timer() {
 			public void run() {
@@ -106,15 +106,14 @@ public class TransitAlarm implements EntryPoint {
 		};
 		refreshTimer.scheduleRepeating(refreshInterval); // Auto refresh every 10 secs
 
-		Button refreshButton = new Button ("Refresh");
-		refreshButton.getElement().setClassName("btn btn-info");
-		refreshButton.addClickHandler(new refreshClickHandler());
-		RootPanel.get().add(refreshButton);
-		
+
 	}
-	
+
 	public void loadDestinationPage()
 	{
+		Button refreshButton = new Button ("Refresh Now");
+		refreshButton.getElement().setClassName("btn btn-info");
+		refreshButton.addClickHandler(new refreshClickHandler());
 		Button searchButton = new Button("Search");
 		searchButton.getElement().setClassName("btn btn-lg btn-primary");
 		searchButton.addClickHandler(new SearchButtonClickHandler());
@@ -141,24 +140,24 @@ public class TransitAlarm implements EntryPoint {
 		searchDestinationFIeld.add(currentLocationCheckBox);
 		searchDestinationFIeld.add(destinationLabel);
 		searchDestinationFIeld.add(destinationInput);
-
-		
+		RootPanel.get("searchDestinationField").add(destinationPageHTML);
 		RootPanel.get("searchDestinationField").add(searchButton);
+		RootPanel.get("searchDestinationField").add(refreshButton);
 	}
-	
+
 	public void loadAlarmPage()
 	{
 		System.out.println("Loading alarm page");
 		RootPanel.get("alarmPageField").add(alarmPageHTML);
 	}
-	
-class SearchButtonClickHandler implements ClickHandler {
+
+	class SearchButtonClickHandler implements ClickHandler {
 
 		public void onClick(ClickEvent event) 
 		{
 
 			RootPanel.get("searchDestinationField").clear();
-			
+
 			loadAlarmPage();
 		}
 	}
@@ -197,40 +196,41 @@ class SearchButtonClickHandler implements ClickHandler {
 			refreshPosition();
 		}			
 	}
-	
-    private double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
-        double theta = lon1 - lon2;
-        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
-        dist = Math.acos(dist);
-        dist = rad2deg(dist);
-        dist = dist * 60 * 1.1515;
-        if (unit == 'K') {
-          dist = dist * 1.609344;}
-        else if (unit == 'Q'){
-        	  dist = (( dist * 1.609344 ) / 1000);
-          }
-        else if (unit == 'N') {
-          dist = dist * 0.8684;
-          }
-        return (dist);
-      }
 
-      /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-      /*::  This function converts decimal degrees to radians             :*/
-      /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-      private double deg2rad(double deg) {
-        return (deg * Math.PI / 180.0);
-      }
+	private double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
+		double theta = lon1 - lon2;
+		double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+		dist = Math.acos(dist);
+		dist = rad2deg(dist);
+		dist = dist * 60 * 1.1515;
+		if (unit == 'K') {
+			dist = dist * 1.609344;}
+		else if (unit == 'Q'){
+			dist = (( dist * 1.609344 ) / 1000);
+		}
+		else if (unit == 'N') {
+			dist = dist * 0.8684;
+		}
+		return (dist);
+	}
 
-      /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-      /*::  This function converts radians to decimal degrees             :*/
-      /*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-      private double rad2deg(double rad) {
-        return (rad * 180.0 / Math.PI);
-      }}
+	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
+	/*::  This function converts decimal degrees to radians             :*/
+	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
+	private double deg2rad(double deg) {
+		return (deg * Math.PI / 180.0);
+	}
 
-     
-	
-		
-	
+	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
+	/*::  This function converts radians to decimal degrees             :*/
+	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
+	private double rad2deg(double rad) {
+		return (rad * 180.0 / Math.PI);
+	}
+}
+
+
+
+
+
 
