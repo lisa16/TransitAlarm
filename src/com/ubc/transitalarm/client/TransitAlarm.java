@@ -12,6 +12,7 @@ import com.google.gwt.geolocation.client.Position.Coordinates;
 import com.google.gwt.geolocation.client.PositionError;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.HTML;
@@ -36,6 +37,8 @@ public class TransitAlarm implements EntryPoint {
 	 */
 	private final GreetingServiceAsync greetingService = GWT
 			.create(GreetingService.class);
+
+	public AsyncCallback<String> alarmService;
 
 	final HTML alarmPageHTML = new HTML();
 	final HTML destinationPageHTML = new HTML();
@@ -129,7 +132,15 @@ public class TransitAlarm implements EntryPoint {
 		countdown.scheduleRepeating(1000);
 
 	}
+<<<<<<< HEAD
 	Button refreshButton;
+=======
+
+	private TextBox startingInput;
+	private CheckBox currentLocationCheckBox;
+	private TextBox destinationInput;
+	
+>>>>>>> a00383a01adf311387f80638ae1f85f323f14bfc
 	public void loadDestinationPage()
 	{
 		refreshButton = new Button ("Refresh Now");
@@ -161,7 +172,6 @@ public class TransitAlarm implements EntryPoint {
 		searchDestinationFIeld.add(currentLocationCheckBox);
 		searchDestinationFIeld.add(destinationLabel);
 		searchDestinationFIeld.add(destinationInput);
-		RootPanel.get("searchDestinationField").add(destinationPageHTML);
 		RootPanel.get("searchDestinationField").add(searchButton);
 		RootPanel.get("searchDestinationField").add(refreshButton);
 	}
@@ -247,6 +257,31 @@ public class TransitAlarm implements EntryPoint {
 	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
 	private double rad2deg(double rad) {
 		return (rad * 180.0 / Math.PI);
+	}
+
+	public void callGoogleDirectionAPI()
+	{
+		alarmService = new AsyncCallback<String>(){
+			@Override
+			public void onFailure(Throwable caught) {
+				System.out.println(caught.getMessage());
+			}
+
+			@Override
+			public void onSuccess(String result) {
+
+				System.out.println(result);
+			}
+		};
+		String dddd= "dd";
+		String cccc= "cc";
+		String queryUri = "maps.googleapis.com/maps/api/directions/json?origin="+
+				dddd +
+				"&destination="+
+				cccc+
+				"&key=AIzaSyDdbIImonbUzFmDPgfy37d0zBEsrXEo3FI&departure_time=1343641500&mode=transit";
+
+		greetingService.greetServer(queryUri, alarmService);
 	}
 }
 
