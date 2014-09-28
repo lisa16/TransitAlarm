@@ -96,11 +96,7 @@ public class TransitAlarm implements EntryPoint {
 				"			<h3>Transfer stop name 3:</h3>\r\n" + 
 				"			<h4>Distance remaining 15km</h4>\r\n" + 
 				"		</div>\r\n" + 
-				"\r\n" + 
-				"		<div class=\"row\">\r\n" + 
-				"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Refresh Now</button>\r\n" + 
-				"			<h4>refreshing in 40 seconds...</h4>\r\n" + 
-				"		</div>");
+				"\r\n");
 
 
 		loadDestinationPage();
@@ -144,9 +140,9 @@ public class TransitAlarm implements EntryPoint {
 
 	public void loadDestinationPage()
 	{
-		refreshButton = new Button ("Refresh Now");
-		refreshButton.getElement().setClassName("btn btn-info");
-		refreshButton.addClickHandler(new refreshClickHandler());
+//		refreshButton = new Button ("Refresh Now");
+//		refreshButton.getElement().setClassName("btn btn-info");
+//		refreshButton.addClickHandler(new refreshClickHandler());
 		Button searchButton = new Button("Search");
 		searchButton.getElement().setClassName("btn btn-lg btn-primary");
 		searchButton.addClickHandler(new SearchButtonClickHandler());
@@ -174,13 +170,17 @@ public class TransitAlarm implements EntryPoint {
 		searchDestinationFIeld.add(destinationLabel);
 		searchDestinationFIeld.add(destinationInput);
 		RootPanel.get("searchDestinationField").add(searchButton);
-		RootPanel.get("searchDestinationField").add(refreshButton);
+		//RootPanel.get("searchDestinationField").add(refreshButton);
 	}
 
 	public void loadAlarmPage()
 	{
 		System.out.println("Loading alarm page");
 		RootPanel.get("alarmPageField").add(alarmPageHTML);
+		refreshButton = new Button ("Refresh Now");
+		refreshButton.getElement().setClassName("btn btn-info");
+		refreshButton.addClickHandler(new refreshClickHandler());
+		RootPanel.get().add(refreshButton);
 	}
 
 	class SearchButtonClickHandler implements ClickHandler {
