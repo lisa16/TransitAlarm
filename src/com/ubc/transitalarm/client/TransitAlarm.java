@@ -1,5 +1,7 @@
 package com.ubc.transitalarm.client;
 
+import java.util.List;
+
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
@@ -18,6 +20,8 @@ import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextBox;
+import com.ubc.transitalarm.shared.DestinationLocations;
+import com.ubc.transitalarm.shared.FieldVerifier;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -38,7 +42,7 @@ public class TransitAlarm implements EntryPoint {
 	private final GreetingServiceAsync greetingService = GWT
 			.create(GreetingService.class);
 
-	public AsyncCallback<String> alarmService;
+	public AsyncCallback<DestinationLocations> alarmService;
 
 	final HTML alarmPageHTML = new HTML();
 	final HTML destinationPageHTML = new HTML();
@@ -56,6 +60,8 @@ public class TransitAlarm implements EntryPoint {
 	long endTime = currentTime + refreshInterval;
 
 
+	Button stopAlarm;
+	
 	/**
 	 * This is the entry point method.
 	 */
@@ -78,7 +84,7 @@ public class TransitAlarm implements EntryPoint {
 				"\r\n" + 
 				"		<button type=\"button\" class=\"btn btn-lg btn-primary\">Search</button>");
 
-		alarmPageHTML.setHTML("		<div class=\"row\">\r\n" + 
+/*		alarmPageHTML.setHTML("		<div class=\"row\">\r\n" + 
 				"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Stop Alarm</button>\r\n" + 
 				"		</div>\r\n" + 
 				"\r\n" + 
@@ -100,8 +106,13 @@ public class TransitAlarm implements EntryPoint {
 				"		<div class=\"row\">\r\n" + 
 				"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Refresh Now</button>\r\n" + 
 				"			<h4>refreshing in 40 seconds...</h4>\r\n" + 
-				"		</div>");
+				"		</div>");*/
 
+		
+		
+		stopAlarm = new Button();
+		stopAlarm.getElement().setClassName("btn btn-lg btn-primary");
+		
 
 		loadDestinationPage();
 		//		loadAlarmPage();
@@ -180,7 +191,12 @@ public class TransitAlarm implements EntryPoint {
 	public void loadAlarmPage()
 	{
 		System.out.println("Loading alarm page");
+		
+		RootPanel.get("alarmPageField").add(stopAlarm);
+		
 		RootPanel.get("alarmPageField").add(alarmPageHTML);
+		
+		
 	}
 
 	class SearchButtonClickHandler implements ClickHandler {
@@ -266,16 +282,57 @@ public class TransitAlarm implements EntryPoint {
 
 	public void callGoogleDirectionAPI(String origin, String destination)
 	{
-		alarmService = new AsyncCallback<String>(){
+		alarmService = new AsyncCallback<DestinationLocations>(){
 			@Override
 			public void onFailure(Throwable caught) {
 				System.out.println(caught.getMessage());
 			}
 
 			@Override
-			public void onSuccess(String result) {
+			public void onSuccess(DestinationLocations result) {
 
-				System.out.println(result);
+				String transferName = "";
+				String distanceRemaining = "";
+				
+				String content = "";
+				
+				List<String> names = result.getNames();
+				List<Double> latitudes = result.getLatitudes();
+				List<Double> longitudes = result.getLongitudes();
+				
+				for(int i=0; i<result.getNames().size(); i++)
+				{
+					content += "<h3>" + names.get(i) + "</h3>";
+					
+					double distance = FieldVerifier.distance(latitudes.get(i), longitudes.get(i), latitude, longitude, 'K');
+					content += "<h4> Distance remaining" + distance + " km</h4>";
+				}
+				
+				/*alarmPageHTML.setHTML("		<div class=\"row\">\r\n" + 
+						"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Stop Alarm</button>\r\n" + 
+						"		</div>\r\n" + 
+						"\r\n" + 
+						"		<div class=\"row\">\r\n" + 
+						"			<h3>Transfer stop name 1:</h3>\r\n" + 
+						"			<h4>Distance remaining <font color=\"red\">500m</font></h4>\r\n" + 
+						"		</div>\r\n" + 
+						"\r\n" + 
+						"		<div class=\"row\">\r\n" + 
+						"			<h3>Transfer stop name 2:</h3>\r\n" + 
+						"			<h4>Distance remaining 10km</h4>\r\n" + 
+						"		</div>\r\n" + 
+						"\r\n" + 
+						"		<div class=\"row\">\r\n" + 
+						"			<h3>Transfer stop name 3:</h3>\r\n" + 
+						"			<h4>Distance remaining 15km</h4>\r\n" + 
+						"		</div>\r\n" + 
+						"\r\n" + 
+						"		<div class=\"row\">\r\n" + 
+						"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Refresh Now</button>\r\n" + 
+						"			<h4>refreshing in 40 seconds...</h4>\r\n" + 
+						"		</div>");*/
+				
+				alarmPageHTML.setHTML(content);
 			}
 		};
 

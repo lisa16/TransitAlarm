@@ -11,6 +11,7 @@ import com.google.appengine.labs.repackaged.org.json.JSONException;
 import com.google.appengine.labs.repackaged.org.json.JSONObject;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 import com.ubc.transitalarm.client.GreetingService;
+import com.ubc.transitalarm.shared.DestinationLocations;
 
 /**
  * The server-side implementation of the RPC service.
@@ -19,9 +20,11 @@ import com.ubc.transitalarm.client.GreetingService;
 public class GreetingServiceImpl extends RemoteServiceServlet implements
 GreetingService {
 
-	public String greetServer(String input) throws IllegalArgumentException {
+	public DestinationLocations greetServer(String input) throws IllegalArgumentException {
 		// Verify that the input is valid. 
 
+		DestinationLocations destNamesLoc = new DestinationLocations();
+		
 		StringBuilder uriBuilder= new StringBuilder(input);
 		String result = makeJSONQuery(uriBuilder);
 
@@ -40,9 +43,13 @@ GreetingService {
 					JSONObject transitDetail=stepsObject.getJSONObject("transit_details");
 					JSONObject stopArrival=transitDetail.getJSONObject("arrival_stop");
 					String stopName=stopArrival.getString("name");
+					destNamesLoc.getNames().add(stopName);
 					JSONObject stopLocation=stopArrival.getJSONObject("location");
 					double locationLatitude=stopLocation.getDouble("lat");
 					double locationLongtitude=stopLocation.getDouble("lng");
+					destNamesLoc.getLatitudes().add(locationLatitude);
+					destNamesLoc.getLongitudes().add(locationLongtitude);
+					
 					System.out.println(locationLatitude);
 					System.out.println(locationLongtitude);
 					System.out.println(stopName);
@@ -53,7 +60,7 @@ GreetingService {
 		{
 			e.printStackTrace();
 		}
-		return result;
+		return destNamesLoc;
 
 		// Escape data from the client to avoid cross-site script vulnerabilities.
 		//		input = escapeHtml(input);
