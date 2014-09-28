@@ -112,7 +112,6 @@ public class TransitAlarm implements EntryPoint {
 		Button refreshButton = new Button ("Refresh Now");
 		refreshButton.getElement().setClassName("btn btn-info");
 		refreshButton.addClickHandler(new refreshClickHandler());
-		RootPanel.get().add(refreshButton);
 		Button searchButton = new Button("Search");
 		searchButton.getElement().setClassName("btn btn-lg btn-primary");
 		searchButton.addClickHandler(new SearchButtonClickHandler());
@@ -120,6 +119,7 @@ public class TransitAlarm implements EntryPoint {
 
 		RootPanel.get("searchDestinationField").add(destinationPageHTML);
 		RootPanel.get("searchDestinationField").add(searchButton);
+		RootPanel.get("searchDestinationField").add(refreshButton);
 	}
 
 	public void loadAlarmPage()
