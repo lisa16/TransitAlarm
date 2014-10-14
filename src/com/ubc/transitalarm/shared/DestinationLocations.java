@@ -6,9 +6,6 @@ import java.util.List;
 
 public class DestinationLocations implements Serializable{
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private List<String> names = new ArrayList<String>();
 	private List<Double> latitudes = new ArrayList<Double>();

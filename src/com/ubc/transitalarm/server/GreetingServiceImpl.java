@@ -17,11 +17,15 @@ import com.ubc.transitalarm.shared.DestinationLocations;
  * The server-side implementation of the RPC service.
  */
 @SuppressWarnings("serial")
-public class GreetingServiceImpl extends RemoteServiceServlet implements
-GreetingService {
+public class GreetingServiceImpl extends RemoteServiceServlet implements GreetingService {
 
-	public DestinationLocations greetServer(String input) throws IllegalArgumentException {
+	private final String GOOGLE_TRANSIT_API_KEY = "AIzaSyDdbIImonbUzFmDPgfy37d0zBEsrXEo3FI";
+	
+	public DestinationLocations greetServer(String url) throws IllegalArgumentException {
 		// Verify that the input is valid. 
+		
+		//Do not reveal transit_api_key in the client side.
+		String input = url.replaceFirst("GOOGLE_TRANSIT_API_KEY", GOOGLE_TRANSIT_API_KEY);
 
 		DestinationLocations destNamesLoc = new DestinationLocations();
 		
@@ -61,10 +65,6 @@ GreetingService {
 			e.printStackTrace();
 		}
 		return destNamesLoc;
-
-		// Escape data from the client to avoid cross-site script vulnerabilities.
-		//		input = escapeHtml(input);
-		//		userAgent = escapeHtml(userAgent);
 	}
 
 	/**

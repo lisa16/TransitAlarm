@@ -66,11 +66,28 @@
 		<button type="button" class="btn btn-lg btn-primary">Search</button> -->
 		
 		<div id="searchDestinationField">
+			
+			<h3>Starting: </h3>
+			<input id="startingInput" class="form-control" placeHolder="Enter Starting Location" type="text"></input>
+			<div class="checkbox">
+				<label>
+					<input id="currentLocationCheckBox" type="checkbox" disabled> Current Location
+				</label>
+			</div>
+			<h3>Destination:</h3>
+			<input id="destinationInput" class="form-control" placeHolder="Enter Destination Location" type="text"></input>
+		
+			<button id="searchBtn" type="button" class="btn btn-lg btn-primary">Search</button>		
 		</div>
 		
-		<div id="alarmPageField">
-		
+		<div id="alarmPageField" style="display: inline;">
+			<button id="alarmBtn" type="button" class="btn btn-lg btn-danger" style="display: none" >Stop Alarm</button>
+			<button id="refreshBtn" type="button" class="btn btn-lg btn-info">Refresh Now</button>
+			<div id="loadingGif" style="display: none;">
+				<img src="img/loading2.gif" >
+			</div>
 		</div>
+		
 	</div>
 </body>
 </html>

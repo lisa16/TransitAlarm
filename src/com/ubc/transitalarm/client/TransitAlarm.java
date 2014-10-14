@@ -1,24 +1,29 @@
 package com.ubc.transitalarm.client;
 
+import java.util.HashSet;
 import java.util.List;
 
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Document;
+import com.google.gwt.dom.client.Style.Display;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.geolocation.client.Geolocation;
-import com.google.gwt.geolocation.client.Geolocation.PositionOptions;
 import com.google.gwt.geolocation.client.Position;
 import com.google.gwt.geolocation.client.Position.Coordinates;
 import com.google.gwt.geolocation.client.PositionError;
+import com.google.gwt.http.client.URL;
+import com.google.gwt.media.client.Audio;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.SimpleCheckBox;
 import com.google.gwt.user.client.ui.TextBox;
 import com.ubc.transitalarm.shared.DestinationLocations;
 import com.ubc.transitalarm.shared.FieldVerifier;
@@ -27,283 +32,198 @@ import com.ubc.transitalarm.shared.FieldVerifier;
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class TransitAlarm implements EntryPoint {
-	/**
-	 * The message displayed to the user when the server cannot be reached or
-	 * returns an error.
-	 */
-	private static final String SERVER_ERROR = "An error occurred while "
-			+ "attempting to contact the server. Please check your network "
-			+ "connection and try again.";
 
 	/**
 	 * Create a remote service proxy to talk to the server-side Greeting
 	 * service.
 	 */
-	private final GreetingServiceAsync greetingService = GWT
-			.create(GreetingService.class);
+	private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
 
 	public AsyncCallback<DestinationLocations> alarmService;
 
-	final HTML alarmPageHTML = new HTML();
-	final HTML destinationPageHTML = new HTML();
-
-	private int queryInterval = 10000; 
-	private int refreshInterval = 10000;
-	Geolocation geoposition; 
-	Geolocation.PositionOptions options;
-
-	private double latitude;
-	private double longitude;
-
-
-	long currentTime = System.currentTimeMillis();
-	long endTime = currentTime + refreshInterval;
-
-
-	Button stopAlarm;
+	//===============Final Strings==============
+	private final String SEARCH_PAGE_DIV_ID = "searchDestinationField";
+	private final String ALARM_PAGE_DIV_ID = "alarmPageField";
+	private final int REFRESH_INTERVAL = 10999;
+	private final String LOADING_GIF_DIV_ID = "loadingGif";
+	private final int ALARM_RING_DISTANCE_METERS = 600;
+	private final String ALARM_BUTTON_DIV_ID = "alarmBtn";
+	private final boolean IS_TEST_MODE = false;
+	//==========================================
 	
+	//================Widgets===================
+	private final HTML _alarmPageHTML = new HTML();
+	private final Button _alarmBtn = Button.wrap(Document.get().getElementById("alarmBtn"));
+	private final Button _refreshBtn = Button.wrap(Document.get().getElementById("refreshBtn"));;
+	private final TextBox _startingInput = TextBox.wrap(DOM.getElementById("startingInput"));
+	private final SimpleCheckBox _currentLocationCheckBox = SimpleCheckBox.wrap(DOM.getElementById("currentLocationCheckBox"));
+	private final TextBox _destinationInput = TextBox.wrap(DOM.getElementById("destinationInput"));
+	private final Button _searchButton = Button.wrap(DOM.getElementById("searchBtn"));
+	//==========================================
+
+	private Geolocation _geoposition; 
+	private DestinationLocations _destinationLocations;
+
+	private double _latitude;
+	private double _longitude;
+	private double _accuracy;
+	
+	private HashSet<Integer> _alarmActivationList = new HashSet<Integer>();
+
+	private long _currentTime = System.currentTimeMillis();
+	private long _endTime = _currentTime + REFRESH_INTERVAL;
+	
+	private Audio _alarmAudio;
+	{
+		_alarmAudio = Audio.createIfSupported();
+		_alarmAudio.setSrc("audio/minion_fire_alarm.mp3");
+		_alarmAudio.setAutoplay(false);
+		_alarmAudio.setLoop(true);
+		_alarmAudio.load();
+	}
+
 	/**
 	 * This is the entry point method.
 	 */
 	public void onModuleLoad() 
 	{
-		refreshPosition();
-
-		destinationPageHTML.setHTML("		<div class=\"row\">\r\n" + 
-				"			<h3>Source:</h3>\r\n" + 
-				"			<input class=\"form-control\" placeHolder=\"Enter Starting Location\"\r\n" + 
-				"				type=\"text\"></input> <input type=\"checkbox\"> Current\r\n" + 
-				"			Location\r\n" + 
-				"		</div>\r\n" + 
-				"\r\n" + 
-				"		<div class=\"row\">\r\n" + 
-				"			<h3>Dest:</h3>\r\n" + 
-				"			<input class=\"form-control\" placeHolder=\"Enter Destination Location\"\r\n" + 
-				"				type=\"text\"></input>\r\n" + 
-				"		</div>\r\n" + 
-				"\r\n" + 
-				"		<button type=\"button\" class=\"btn btn-lg btn-primary\">Search</button>");
-
-/*		alarmPageHTML.setHTML("		<div class=\"row\">\r\n" + 
-				"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Stop Alarm</button>\r\n" + 
-				"		</div>\r\n" + 
-				"\r\n" + 
-				"		<div class=\"row\">\r\n" + 
-				"			<h3>Transfer stop name 1:</h3>\r\n" + 
-				"			<h4>Distance remaining <font color=\"red\">500m</font></h4>\r\n" + 
-				"		</div>\r\n" + 
-				"\r\n" + 
-				"		<div class=\"row\">\r\n" + 
-				"			<h3>Transfer stop name 2:</h3>\r\n" + 
-				"			<h4>Distance remaining 10km</h4>\r\n" + 
-				"		</div>\r\n" + 
-				"\r\n" + 
-				"		<div class=\"row\">\r\n" + 
-				"			<h3>Transfer stop name 3:</h3>\r\n" + 
-				"			<h4>Distance remaining 15km</h4>\r\n" + 
-				"		</div>\r\n" + 
-				"\r\n" + 
-				"		<div class=\"row\">\r\n" + 
-				"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Refresh Now</button>\r\n" + 
-				"			<h4>refreshing in 40 seconds...</h4>\r\n" + 
-				"		</div>");*/
-
-		
-		
-		stopAlarm = new Button();
-		stopAlarm.getElement().setClassName("btn btn-lg btn-primary");
-		
-
-		loadDestinationPage();
-		//		loadAlarmPage();
-
-		Timer refreshTimer = new Timer() {
-			public void run() {
-				refreshPosition();
-			}
-		};
-		refreshTimer.scheduleRepeating(refreshInterval); // Auto refresh every 10 secs
-
-		Timer countdown = new Timer() {
-			@Override
-			public void run() {
-				currentTime = System.currentTimeMillis();
-				if (endTime - currentTime <= 0){
-					refreshPosition();
-					endTime = currentTime + 10000;
-
-				}
-				if(refreshButton!=null){
-					refreshButton.setText("Refreshing in: " + (endTime - currentTime)/1000 + " seconds");
-					
-//					fakeLatitude += 0.0005d;
-//					fakeLongitude += 0.0005d;
-					
-					if(_destinationLocations != null)
-					{
-						changeDestinations(_destinationLocations);
-					}
-					
-				}
-				System.out.println("Refreshing in: " + (endTime - currentTime)/1000 + " seconds");
-
-
-			}			
-		};
-		countdown.scheduleRepeating(1000);
-
+		RefreshCurrentGPSLocation();
+		LoadSearchPage();
 	}
-
-	Button refreshButton;
-
-
-	private TextBox startingInput;
-	private CheckBox currentLocationCheckBox;
-	private TextBox destinationInput;
-
-
-	public void loadDestinationPage()
+	
+	public void LoadSearchPage()
 	{
-		//		refreshButton = new Button ("Refresh Now");
-		//		refreshButton.getElement().setClassName("btn btn-info");
-		//		refreshButton.addClickHandler(new refreshClickHandler());
-		Button searchButton = new Button("Search");
-		searchButton.getElement().setClassName("btn btn-lg btn-primary");
-		searchButton.addClickHandler(new SearchButtonClickHandler());
+		System.out.println("Loading search page");
 
-		//		RootPanel.get("searchDestinationField").add(destinationPageHTML);
-		final RootPanel searchDestinationFIeld = RootPanel.get("searchDestinationField");
-
-		HTML sourceLabel = new HTML("<h3>Starting: </h3>");
-		startingInput = new TextBox();
-		startingInput.getElement().setClassName("form-control");
-		startingInput.getElement().setAttribute("placeHolder", "Enter Starting Location");
-		startingInput.getElement().setAttribute("type", "text");
-
-		CheckBox currentLocationCheckBox = new CheckBox("Curent Location");
-
-		HTML destinationLabel = new HTML("<h3>Destination: </h3>");
-		destinationInput = new TextBox();
-		destinationInput.getElement().setClassName("form-control");
-		destinationInput.getElement().setAttribute("placeHolder", "Enter Destination Location");
-		destinationInput.getElement().setAttribute("type", "text");
-
-		searchDestinationFIeld.add(sourceLabel);
-		searchDestinationFIeld.add(startingInput);
-		searchDestinationFIeld.add(currentLocationCheckBox);
-		searchDestinationFIeld.add(destinationLabel);
-		searchDestinationFIeld.add(destinationInput);
-		RootPanel.get("searchDestinationField").add(searchButton);
-		//RootPanel.get("searchDestinationField").add(refreshButton);
+		_searchButton.addClickHandler(new SearchButtonClickHandler());
+		_currentLocationCheckBox.addClickHandler(new CurrentLocationCheckBoxClickHandler());
+		
+		DOM.getElementById(SEARCH_PAGE_DIV_ID).getStyle().setDisplay(Display.INLINE);
+		DOM.getElementById(ALARM_PAGE_DIV_ID).getStyle().setDisplay(Display.NONE);
 	}
-
-	public void loadAlarmPage()
+	public void LoadAlarmPage()
 	{
 		System.out.println("Loading alarm page");
 		
-		RootPanel.get("alarmPageField").add(stopAlarm);
+		DOM.getElementById(SEARCH_PAGE_DIV_ID).getStyle().setDisplay(Display.NONE);
+		DOM.getElementById(ALARM_PAGE_DIV_ID).getStyle().setDisplay(Display.INLINE);
 		
-		RootPanel.get("alarmPageField").add(alarmPageHTML);
-		refreshButton = new Button ("Refresh Now");
-		refreshButton.getElement().setClassName("btn btn-info");
-		refreshButton.addClickHandler(new refreshClickHandler());
-		RootPanel.get().add(refreshButton);
+		RootPanel.get(ALARM_PAGE_DIV_ID).add(_alarmPageHTML);
+		_refreshBtn.addClickHandler(new RefreshClickHandler());
+		_alarmBtn.addClickHandler(new AlarmButtonClickHandler());
+	}
+	
+	private void StartLocationRefreshTimer()
+	{
+		Timer countdown = new Timer() {
+			@Override
+			public void run() {
+				_currentTime = System.currentTimeMillis();
+				if (_endTime - _currentTime <= 0)
+				{
+					RefreshCurrentGPSLocation();
+					_endTime = _currentTime + REFRESH_INTERVAL;
+				}
+				if(_refreshBtn!=null){
+					_refreshBtn.setText("Refreshing in: " + (_endTime - _currentTime)/1000 + " seconds");
+				}
+			}
+		};
+		countdown.scheduleRepeating(200);
+	}
+	
+	private void SetAlarmStatus(boolean alarmOn)
+	{
+		if(alarmOn)
+		{
+			DOM.getElementById(ALARM_BUTTON_DIV_ID).getStyle().setDisplay(Display.INLINE);
+			_alarmAudio.play();
+		}
+		else
+		{
+			DOM.getElementById(ALARM_BUTTON_DIV_ID).getStyle().setDisplay(Display.NONE);
+			_alarmAudio.load();
+		}
+	}
+	
+	class AlarmButtonClickHandler implements ClickHandler {
+		@Override
+		public void onClick(ClickEvent event) {
+			SetAlarmStatus(false);
+		}
 	}
 
 	class SearchButtonClickHandler implements ClickHandler {
 
 		public void onClick(ClickEvent event) 
 		{
-			String start=startingInput.getText();
-			String end=destinationInput.getText();
+			String start=_startingInput.getText();
+			String end=_destinationInput.getText();
 
 			callGoogleDirectionAPI(start,end);
 
-			RootPanel.get("searchDestinationField").clear();
-
-			loadAlarmPage();
+			LoadAlarmPage();
 		}
 	}
 
-
-	boolean refresh = true;
-	
-	private void refreshPosition() {
-		geoposition = Geolocation.getIfSupported();
-		if (geoposition == null) {
+	private void RefreshCurrentGPSLocation() {
+		SetLoadingGifVisibility(true);
+		_geoposition = Geolocation.getIfSupported();
+		if (_geoposition == null) {
 			Window.alert("Sorry, your browser doesn't support the Geolocation feature!");
 		}
 
-		options = new PositionOptions();
-		options.setMaximumAge(queryInterval);
-
-		geoposition.getCurrentPosition(new Callback<Position, PositionError>() {
-			@Override
-			public void onSuccess(Position result) {
-				Coordinates coordinates = result.getCoordinates();
-				latitude = coordinates.getLatitude();
-				longitude = coordinates.getLongitude();
-				
-				System.out.println(latitude + " : " + longitude);
-				if(refresh)
-				{
-					fakeLatitude = latitude;
-					fakeLongitude = longitude;
-					refresh = false;
-				}
-				
-				System.out.println(latitude);
-				System.out.println(longitude);
-			}
-
-			@Override
-			public void onFailure(PositionError reason) {
-				Window.alert("Sorry, your location cannot be determined!");
-			}
-		}, options);
-
-	}
-
-	class refreshClickHandler implements ClickHandler{
-		@Override
-		public void onClick(ClickEvent event) {
-			refreshPosition();
-		}			
-	}
-
-	private double distance(double lat1, double lon1, double lat2, double lon2, char unit) {
-		double theta = lon1 - lon2;
-		double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
-		dist = Math.acos(dist);
-		dist = rad2deg(dist);
-		dist = dist * 60 * 1.1515;
-		if (unit == 'K') {
-			dist = dist * 1.609344;}
-		else if (unit == 'Q'){
-			dist = (( dist * 1.609344 ) / 1000);
-		}
-		else if (unit == 'N') {
-			dist = dist * 0.8684;
-		}
-		return (dist);
-	}
-
-	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-	/*::  This function converts decimal degrees to radians             :*/
-	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-	private double deg2rad(double deg) {
-		return (deg * Math.PI / 180.0);
-	}
-
-	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-	/*::  This function converts radians to decimal degrees             :*/
-	/*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
-	private double rad2deg(double rad) {
-		return (rad * 180.0 / Math.PI);
+		_geoposition.getCurrentPosition(new CurrentPositionCallBack());
 	}
 	
-	double fakeLatitude;
-	double fakeLongitude;
+	private class CurrentPositionCallBack implements Callback<Position, PositionError>
+	{
+		@Override
+		public void onSuccess(Position result) {
+			SetLoadingGifVisibility(false);
+			Coordinates coordinates = result.getCoordinates();
+			_latitude = coordinates.getLatitude();
+			_longitude = coordinates.getLongitude();
+			_accuracy = coordinates.getAccuracy();
+			
+			System.out.println("Current GPS location (" + _latitude + ", " + _longitude +")");
+		
+			if(_destinationLocations != null)
+			{
+				changeDestinations(_destinationLocations);
+			}
+			_currentLocationCheckBox.setEnabled(true);
+		}
+
+		@Override
+		public void onFailure(PositionError reason) {
+			SetLoadingGifVisibility(false);
+			Window.alert("Sorry, your location cannot be determined!: " + reason.getMessage());
+		}
+	}
+	
+	private class CurrentLocationCheckBoxClickHandler implements ClickHandler
+	{
+		@Override
+		public void onClick(ClickEvent event) {
+			if(_currentLocationCheckBox.isEnabled())
+			{
+				_startingInput.setText(_latitude + "," + _longitude);
+				_startingInput.setEnabled(false);
+			}
+			else
+			{
+				_startingInput.setEnabled(true);
+			}
+		}
+	}
+
+	private class RefreshClickHandler implements ClickHandler{
+		@Override
+		public void onClick(ClickEvent event) {
+			RefreshCurrentGPSLocation();
+		}			
+	}
 
 	private void changeDestinations(DestinationLocations result)
 	{
@@ -315,80 +235,82 @@ public class TransitAlarm implements EntryPoint {
 		List<Double> latitudes = _destinationLocations.getLatitudes();
 		List<Double> longitudes = _destinationLocations.getLongitudes();
 		
-		for(int i=0; i<_destinationLocations.getNames().size(); i++)
+		for(int i=0; i<names.size(); i++)
 		{
 			content += "<h3>" + names.get(i) + "</h3>";
 			
-			double distance = FieldVerifier.distance(latitudes.get(i), longitudes.get(i), latitude, longitude, 'K');
-			content += "<h4> Distance remaining" + distance + " km</h4>";
+			double distance = FieldVerifier.distance(latitudes.get(i), longitudes.get(i), _latitude, _longitude, 'K');
+			
+			int kiloMeters = (int)distance;
+			int meters = (int)((distance - kiloMeters)*1000);
+			
+			if(IS_TEST_MODE)
+			{
+				if(Math.random()<0.1f)
+				{
+					distance = 0.5f;
+				}
+			}
+			
+			content += "<h4> Distance remaining: " + kiloMeters + "km "+ meters +"m</h4>";
+			
+			if(!_alarmActivationList.contains(i) && distance < ALARM_RING_DISTANCE_METERS / 1000f)
+			{
+				//Set off alarm
+				_alarmActivationList.add(i);
+				SetAlarmStatus(true);
+				System.out.println("Setting alarm On: " + i);
+			}
 		}
 		
-		alarmPageHTML.setHTML(content);
+		_alarmPageHTML.setHTML(content);
 	}
-	private DestinationLocations _destinationLocations;
 	
 	public void callGoogleDirectionAPI(String origin, String destination)
 	{
+		SetLoadingGifVisibility(true);
 		alarmService = new AsyncCallback<DestinationLocations>(){
 			@Override
 			public void onFailure(Throwable caught) {
+				SetLoadingGifVisibility(false);
 				System.out.println(caught.getMessage());
 			}
 
 			@Override
 			public void onSuccess(DestinationLocations result) {
+				SetLoadingGifVisibility(false);
 				changeDestinations(result);
-/*				_destinationLocations = result;
-				
-				String content = "";
-				
-				List<String> names = _destinationLocations.getNames();
-				List<Double> latitudes = _destinationLocations.getLatitudes();
-				List<Double> longitudes = _destinationLocations.getLongitudes();
-				
-				for(int i=0; i<_destinationLocations.getNames().size(); i++)
-				{
-					content += "<h3>" + names.get(i) + "</h3>";
-					
-					double distance = FieldVerifier.distance(latitudes.get(i), longitudes.get(i), fakeLatitude, fakeLongitude, 'K');
-					content += "<h4> Distance remaining" + distance + " km</h4>";
-				}*/
-				
-				/*alarmPageHTML.setHTML("		<div class=\"row\">\r\n" + 
-						"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Stop Alarm</button>\r\n" + 
-						"		</div>\r\n" + 
-						"\r\n" + 
-						"		<div class=\"row\">\r\n" + 
-						"			<h3>Transfer stop name 1:</h3>\r\n" + 
-						"			<h4>Distance remaining <font color=\"red\">500m</font></h4>\r\n" + 
-						"		</div>\r\n" + 
-						"\r\n" + 
-						"		<div class=\"row\">\r\n" + 
-						"			<h3>Transfer stop name 2:</h3>\r\n" + 
-						"			<h4>Distance remaining 10km</h4>\r\n" + 
-						"		</div>\r\n" + 
-						"\r\n" + 
-						"		<div class=\"row\">\r\n" + 
-						"			<h3>Transfer stop name 3:</h3>\r\n" + 
-						"			<h4>Distance remaining 15km</h4>\r\n" + 
-						"		</div>\r\n" + 
-						"\r\n" + 
-						"		<div class=\"row\">\r\n" + 
-						"			<button type=\"button\" class=\"btn btn-lg btn-primary\">Refresh Now</button>\r\n" + 
-						"			<h4>refreshing in 40 seconds...</h4>\r\n" + 
-						"		</div>");*/
-				
-				
+				StartLocationRefreshTimer();
 			}
 		};
-
+		long curTimeSeconds = System.currentTimeMillis()/1000;
+		
+		String formattedOrigin = URL.encode(origin);
+		String formattedDestination = URL.encode(destination);
+		
 		String queryUri = "maps.googleapis.com/maps/api/directions/json?origin="+
-				origin +
+				formattedOrigin +
 				"&destination="+
-				destination+
-				"&key=AIzaSyDdbIImonbUzFmDPgfy37d0zBEsrXEo3FI&departure_time=1343641500&mode=transit";
+				formattedDestination+
+				"&key=GOOGLE_TRANSIT_API_KEY&departure_time="+
+				curTimeSeconds +
+				"&mode=transit";
+		
+//		System.out.println(queryUri);
 
 		greetingService.greetServer(queryUri, alarmService);
+	}
+	
+	private void SetLoadingGifVisibility(boolean isVisible)
+	{
+		try {
+			if(isVisible)
+				DOM.getElementById(LOADING_GIF_DIV_ID).getStyle().setDisplay(Display.INLINE);
+			else
+				DOM.getElementById(LOADING_GIF_DIV_ID).getStyle().setDisplay(Display.NONE);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
 
