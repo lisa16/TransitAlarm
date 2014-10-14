@@ -206,7 +206,7 @@ public class TransitAlarm implements EntryPoint {
 	{
 		@Override
 		public void onClick(ClickEvent event) {
-			if(_currentLocationCheckBox.isEnabled())
+			if(_currentLocationCheckBox.getValue())
 			{
 				_startingInput.setText(_latitude + "," + _longitude);
 				_startingInput.setEnabled(false);
